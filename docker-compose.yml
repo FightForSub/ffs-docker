@@ -36,12 +36,18 @@ services:
     #https://hub.docker.com/_/maven?tab=description
   api:
     image: "maven:3.6.0-jdk-8-alpine"
+    depends_on:
+      - "db"
+      - "broker"
+    command: "mvn clean compile exec:exec@run -U"
+    working_dir: "/FFS-Api/"
     environment:
       MAVEN_CONFIG: /root/.m2
     volumes:
       - "./data/maven-repo:/root/.m2"
       - "./src/ApiLib/:/ApiLib/"
       - "./src/FFS-Api/:/FFS-Api/"
+      - "./data/config-api:/FFS-Api/config"
       - "./src/FFS-PubSub/:/FFS-PubSub/"
     networks:
       ffs:
@@ -50,11 +56,13 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.backend=api"
-      - "traefik.port=80"
+      - "traefik.port=4000"
       - "traefik.frontend.rule=Host:api-ffs.localhost"
   # docker run -v ~/.m2:/var/maven/.m2 -ti --rm -u 1000 -e MAVEN_CONFIG=/var/maven/.m2 maven mvn -Duser.home=/var/maven archetype:generate
   app-ffs:
     image: "node:8.15.0-alpine"
+    depends_on:
+      - "api"
     volumes:
       - "./src/ffs-zera/:/ffs-zera/"
     working_dir: /ffs-zera/
@@ -102,9 +110,10 @@ services:
     #https://hub.docker.com/_/rabbitmq
   broker:
     image: "rabbitmq:3.7.9-management-alpine"
-    # environment:
-    #     RABBITMQ_DEFAULT_USER:
-    #     RABBITMQ_DEFAULT_PASS:
+    environment:
+      RABBITMQ_DEFAULT_USER: ffs-user
+      RABBITMQ_DEFAULT_PASS: ffs-user
+      RABBITMQ_DEFAULT_VHOST: ffs
     ports:
       - "15672:15672"
       - "5672:5672"
