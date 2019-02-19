@@ -1,6 +1,9 @@
 ### Prerequisites
 
+Make
+
 Docker https://docs.docker.com/install/
+
 Docker compose https://docs.docker.com/compose/install/
 
 ### Setup env (clone repositories, create folder)
