@@ -1,0 +1,122 @@
+---
+version: "3.7"
+networks:
+  ffs:
+services:
+  proxy:
+    # https://hub.docker.com/_/traefik?tab=description
+    image: "traefik:1.7.9-alpine"
+    command:
+      - "traefik"
+      - "--api"
+      - "--docker"
+      - "--docker.domain=localhost"
+      - "--docker.exposedbydefault=false"
+      # - "--entryPoints=Name:http Address::80 Redirect.EntryPoint:https"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    # - "./config/traefik:/etc/traefik"
+    # - "./ssl:/etc/cert"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    networks:
+      ffs:
+        aliases:
+          # - web
+          - traefik
+          - "app-ffs.localhost"
+          - "api-ffs.localhost"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.port=8080"
+      - "traefik.backend=traefik-server"
+      - "traefik.frontend.rule=Host:proxy.localhost"
+    #https://hub.docker.com/_/maven?tab=description
+  api:
+    image: "maven:3.6.0-jdk-8-alpine"
+    environment:
+      MAVEN_CONFIG: /root/.m2
+    volumes:
+      - "./data/maven-repo:/root/.m2"
+      - "./src/ApiLib/:/ApiLib/"
+      - "./src/FFS-Api/:/FFS-Api/"
+      - "./src/FFS-PubSub/:/FFS-PubSub/"
+    networks:
+      ffs:
+        aliases:
+          - api
+    labels:
+      - "traefik.enable=true"
+      - "traefik.backend=api"
+      - "traefik.port=80"
+      - "traefik.frontend.rule=Host:api-ffs.localhost"
+  # docker run -v ~/.m2:/var/maven/.m2 -ti --rm -u 1000 -e MAVEN_CONFIG=/var/maven/.m2 maven mvn -Duser.home=/var/maven archetype:generate
+  app-ffs:
+    image: "node:8.15.0-alpine"
+    volumes:
+      - "./src/ffs-zera/:/ffs-zera/"
+    working_dir: /ffs-zera/
+    command:
+      npm run start
+      # - "./id_rsa:/root/id_rsa"
+    environment:
+      DEV_SERVER_HOST: "0.0.0.0"
+      DEV_SERVER_PORT: 3000
+    ports:
+      - "3000:3000"
+    networks:
+      ffs:
+        aliases:
+          - app
+    labels:
+      - "traefik.enable=true"
+      - "traefik.port=3000"
+      - "traefik.backend=app-ffs"
+      - "traefik.frontend.rule=Host:app-ffs.localhost"
+      # - "traefik.frontend.redirect.regex=^https?://app-ffs.localhost/.*"
+      # - "traefik.frontend.redirect.replacement=https://app-ffs.localhost/"
+    # https://hub.docker.com/_/mariadb?tab=description
+  db:
+    image: "mariadb:10.4.2"
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./src/FFS-Api/database/:/docker-entrypoint-initdb.d/
+      - ./data/mariadb:/var/lib/mysql
+    # - "mongo_data:/data/db"
+    # - "./data/db_dumps:/db_dumps"
+    networks:
+      ffs:
+        aliases:
+          - mariadb
+    # command: "--auth"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: ffs
+      MYSQL_USER: ffs-user
+      MYSQL_PASSWORD: ffs-user
+    labels:
+      - "traefik.enable=false"
+    #https://hub.docker.com/_/rabbitmq
+  broker:
+    image: "rabbitmq:3.7.9-management-alpine"
+    # environment:
+    #     RABBITMQ_DEFAULT_USER:
+    #     RABBITMQ_DEFAULT_PASS:
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    # volumes:
+    #     - "rabbitmq_data:/var/lib/rabbitmq"
+    networks:
+      ffs:
+        aliases:
+          - rabbit
+          - rabbitmq
+    labels:
+      - "traefik.enable=true"
+      - "traefik.backend=broker"
+      - "traefik.port=15672"
+      - "traefik.frontend.rule=Host:broker.localhost"
