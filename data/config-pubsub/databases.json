@@ -1,0 +1,10 @@
+{
+  "databases": {
+    "general": {
+      "driver": "com.mysql.jdbc.Driver",
+      "url": "jdbc:mysql://db:3306/ffs",
+      "user": "ffs-user",
+      "password": "ffs-user"
+    }
+  }
+}

@@ -30,6 +30,7 @@ up: ## launch all services
 .PHONY: up
 
 destroy:
-	sudo rm -rf $(DATA_DIR)
+	docker-compose down
+	sudo rm -rf $(DATA_DIR)/maven-repo $(DATA_DIR)/mariadb
 	sudo rm -rf src/
 .PHONY: destroy

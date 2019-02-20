@@ -58,6 +58,30 @@ services:
       - "traefik.backend=api"
       - "traefik.port=4000"
       - "traefik.frontend.rule=Host:api-ffs.localhost"
+  pubsub:
+    image: "maven:3.6.0-jdk-8-alpine"
+    depends_on:
+      - "db"
+      - "broker"
+    command: "mvn clean compile exec:exec@run -U"
+    working_dir: "/FFS-PubSub/"
+    environment:
+      MAVEN_CONFIG: /root/.m2
+    volumes:
+      - "./data/maven-repo:/root/.m2"
+      - "./src/ApiLib/:/ApiLib/"
+      - "./src/FFS-Api/:/FFS-Api/"
+      - "./data/config-pubsub:/FFS-PubSub/config"
+      - "./src/FFS-PubSub/:/FFS-PubSub/"
+    networks:
+      ffs:
+        aliases:
+          - pubsub
+    labels:
+      - "traefik.enable=true"
+      - "traefik.backend=pubsub"
+      - "traefik.port=8009"
+      - "traefik.frontend.rule=Host:pubsub-ffs.localhost"
   # docker run -v ~/.m2:/var/maven/.m2 -ti --rm -u 1000 -e MAVEN_CONFIG=/var/maven/.m2 maven mvn -Duser.home=/var/maven archetype:generate
   app-ffs:
     image: "node:8.15.0-alpine"

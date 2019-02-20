@@ -1,3 +1,4 @@
 data/maven-repo
+data/mariadb
 src/*
-data
+.history
