@@ -9,7 +9,7 @@ Docker compose https://docs.docker.com/compose/install/
 ### Setup env (clone repositories, create folder)
 
 ```
-make setup
+make init
 ```
 
 ### Install dependencies (node_modules, mvn dependencies, ...)
