@@ -67,7 +67,7 @@ services:
       - "./src/ffs-zera/:/ffs-zera/"
     working_dir: /ffs-zera/
     command:
-      npm run start
+      npm run start:docker
       # - "./id_rsa:/root/id_rsa"
     environment:
       DEV_SERVER_HOST: "0.0.0.0"
